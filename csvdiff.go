@@ -34,12 +34,41 @@ type csvData struct {
 	headers   []string
 	headerMap map[string]int
 	records   map[string][]string
-	equal     Comparator // TODO(justiceo): point to Options?
+	opt       *Options
 }
 
-func fromReader(f io.Reader, opt Options) (csvData, error) {
-	var c csvData
-	c.equal = getComparator(opt)
+func (o Options) getComparator() Comparator {
+	if o.Comparator != nil {
+		return o.Comparator
+	}
+
+	return func(a, b string) bool {
+		// attempt a numeric field comparison first
+		afloat, aErr := strconv.ParseFloat(a, 64)
+		bfloat, bErr := strconv.ParseFloat(b, 64)
+		if aErr == nil && bErr == nil && o.Precision > 0 {
+			p := "%." + strconv.Itoa(o.Precision) + "f"
+			return fmt.Sprintf(p, afloat) == fmt.Sprintf(p, bfloat)
+		}
+
+		if o.IgnoreCase {
+			return strings.ToLower(a) == strings.ToLower(b)
+		}
+		return a == b
+	}
+}
+
+func fromReader(f io.Reader, opt *Options) (csvData, error) {
+	if f == nil || opt == nil {
+		return csvData{}, fmt.Errorf("reader and options cannot be nil")
+	}
+
+	c := csvData{
+		headers:   []string{},
+		headerMap: make(map[string]int),
+		records:   make(map[string][]string),
+		opt:       opt,
+	}
 
 	r := csv.NewReader(f)
 	r.Comma = opt.Separator
@@ -79,29 +108,12 @@ func getKey(colIndices []int, record []string) string {
 	return strings.Join(keys, ",")
 }
 
-func getComparator(opt Options) Comparator {
-	return func(a, b string) bool {
-		// attempt a numeric field comparison first
-		afloat, aErr := strconv.ParseFloat(a, 64)
-		bfloat, bErr := strconv.ParseFloat(b, 64)
-		if aErr == nil && bErr == nil && opt.Precision > 0 {
-			p := "%." + strconv.Itoa(opt.Precision) + "f"
-			return fmt.Sprintf(p, afloat) == fmt.Sprintf(p, bfloat)
-		}
-
-		if opt.IgnoreCase {
-			return strings.ToLower(a) == strings.ToLower(b)
-		}
-		return a == b
-	}
-}
-
 func (c csvData) getColIndices(colNames []string) ([]int, error) {
 	var indices []int
 	for _, col := range colNames {
 		i, ok := c.headerMap[col]
 		if !ok {
-			return nil, fmt.Errorf("Invalid column header: %s", col)
+			return nil, fmt.Errorf("Invalid column header: %s. Available headers: %v", col, c.headers)
 		}
 		indices = append(indices, i)
 	}
@@ -115,7 +127,7 @@ func (c csvData) diffSingleRecord(key string, other csvData) []string {
 	for _, h := range headers {
 		ci, ok1 := c.headerMap[h]
 		oi, ok2 := other.headerMap[h]
-		if ok1 && ok2 && c.equal(c.records[key][ci], other.records[key][oi]) {
+		if ok1 && ok2 && c.opt.getComparator()(c.records[key][ci], other.records[key][oi]) {
 			continue
 		}
 		changes = append(changes, h)
@@ -140,7 +152,7 @@ func (c csvData) diffAllRecords(other csvData) DiffRef {
 }
 
 // Compare returns the DiffRef between two csv files
-func Compare(fromCSV, toCSV io.Reader, opt Options) (DiffRef, error) {
+func Compare(fromCSV, toCSV io.Reader, opt *Options) (DiffRef, error) {
 	f, err := fromReader(fromCSV, opt)
 	if err != nil {
 		return DiffRef{}, fmt.Errorf("error parsing from_csv: %v", err)
