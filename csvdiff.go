@@ -58,6 +58,21 @@ func (o Options) getComparator() Comparator {
 	}
 }
 
+// OrderedSet returns a set from a slice
+func OrderedSet(slices ...[]string) []string {
+	var set []string
+	m := make(map[string]bool)
+	for _, slice := range slices {
+		for _, s := range slice {
+			if _, exists := m[s]; !exists {
+				set = append(set, s)
+				m[s] = true
+			}
+		}
+	}
+	return set
+}
+
 func fromReader(f io.Reader, opt *Options) (csvData, error) {
 	if f == nil || opt == nil {
 		return csvData{}, fmt.Errorf("reader and options cannot be nil")
@@ -88,6 +103,7 @@ func fromReader(f io.Reader, opt *Options) (csvData, error) {
 	}
 
 	// get the indices of columns to use as key
+	// TODO(justiceo): KeyColumns should be required for this implementation
 	colIndices, err := c.getColIndices(opt.KeyColumns)
 	if err != nil {
 		return c, err
@@ -95,6 +111,9 @@ func fromReader(f io.Reader, opt *Options) (csvData, error) {
 
 	for _, record := range records {
 		key := getKey(colIndices, record)
+		if opt.IgnoreCase {
+			key = strings.ToLower(key)
+		}
 		c.records[key] = record
 	}
 	return c, nil
@@ -136,11 +155,13 @@ func (c csvData) diffSingleRecord(key string, other csvData) []string {
 }
 
 func (c csvData) diffAllRecords(other csvData) DiffRef {
-	d := DiffRef{}
+	d := DiffRef{
+		Changed: map[string][]string{},
+	}
 	for k := range c.records {
 		if _, ok := other.records[k]; !ok {
 			d.RemovedRow = append(d.RemovedRow, k)
-		} else if changes := c.diffSingleRecord(k, other); changes != nil {
+		} else if changes := c.diffSingleRecord(k, other); len(changes) != 0 {
 			d.Changed[k] = changes
 		}
 		delete(other.records, k)
