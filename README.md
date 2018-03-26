@@ -12,10 +12,10 @@ See the [GoDoc documentation][godoc] for more information.
 [godoc]: https://godoc.org/github.com/justiceo/csvdiff
 
 
-## Install
+## Install and use as lib
 
 ```
-go get -u github.com/justiceo/csvdiff
+go get -u github.com/justiceo/go-csvdiff/csvdiff
 ```
 
 ## Licence
