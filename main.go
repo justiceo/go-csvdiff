@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	csvdiff "./csvdiff"
+	csvdiff "github.com/justiceo/go-csvdiff/csvdiff"
 )
 
 type arrayFlags []string
