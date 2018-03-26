@@ -1,3 +1,4 @@
+// Package csvdiff implements a robust csv differ in go
 package csvdiff
 
 import (

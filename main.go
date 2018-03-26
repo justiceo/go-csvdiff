@@ -1,3 +1,4 @@
+// Command main provides a CLI for csvdiff
 package main
 
 import (
