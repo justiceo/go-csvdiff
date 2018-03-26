@@ -56,7 +56,7 @@ func (o Options) getComparator() Comparator {
 
 // OrderedSet returns a set from a slice
 func OrderedSet(slices ...[]string) []string {
-	var set []string
+	set := []string{}
 	m := make(map[string]bool)
 	for _, slice := range slices {
 		for _, s := range slice {
@@ -113,7 +113,7 @@ func fromReader(f io.Reader, opt *Options) (csvData, error) {
 }
 
 func (c csvData) getKey(colNames []string, record []string) (string, error) {
-	var key []string
+	key := []string{}
 	for _, col := range colNames {
 		i, ok := c.headerMap[col]
 		if !ok {
