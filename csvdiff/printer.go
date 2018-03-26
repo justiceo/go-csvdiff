@@ -63,7 +63,7 @@ func diffToJSON(diff DiffRef, from, to csvData) (string, error) {
 		}
 	}
 
-	json, err := json.Marshal(j)
+	json, err := json.MarshalIndent(j, "", "  ")
 	if err != nil {
 		return "", err
 	}
