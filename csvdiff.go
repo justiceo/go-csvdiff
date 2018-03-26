@@ -20,10 +20,6 @@ type Options struct {
 // Comparator returns true if values in cell "a" and "b" are considered equal or false otherwise.
 type Comparator func(a, b string) bool
 
-type change struct {
-	key, column string
-}
-
 // DiffRef contains references to keys of changed records between two csvs
 type DiffRef struct {
 	AddedRow, RemovedRow []string
@@ -102,15 +98,12 @@ func fromReader(f io.Reader, opt *Options) (csvData, error) {
 		records = records[1:]
 	}
 
-	// get the indices of columns to use as key
 	// TODO(justiceo): KeyColumns should be required for this implementation
-	colIndices, err := c.getColIndices(opt.KeyColumns)
-	if err != nil {
-		return c, err
-	}
-
 	for _, record := range records {
-		key := getKey(colIndices, record)
+		key, err := c.getKey(opt.KeyColumns, record)
+		if err != nil {
+			return c, err
+		}
 		if opt.IgnoreCase {
 			key = strings.ToLower(key)
 		}
@@ -119,24 +112,16 @@ func fromReader(f io.Reader, opt *Options) (csvData, error) {
 	return c, nil
 }
 
-func getKey(colIndices []int, record []string) string {
-	var keys []string
-	for _, v := range colIndices {
-		keys = append(keys, record[v])
-	}
-	return strings.Join(keys, ",")
-}
-
-func (c csvData) getColIndices(colNames []string) ([]int, error) {
-	var indices []int
+func (c csvData) getKey(colNames []string, record []string) (string, error) {
+	var key []string
 	for _, col := range colNames {
 		i, ok := c.headerMap[col]
 		if !ok {
-			return nil, fmt.Errorf("Invalid column header: %s. Available headers: %v", col, c.headers)
+			return "", fmt.Errorf("Invalid column header: %s. Available headers: %v", col, c.headers)
 		}
-		indices = append(indices, i)
+		key = append(key, record[i])
 	}
-	return indices, nil
+	return strings.Join(key, ","), nil
 }
 
 // diffSingleRecordUnordered
@@ -155,16 +140,14 @@ func (c csvData) diffSingleRecord(key string, other csvData) []string {
 }
 
 func (c csvData) diffAllRecords(other csvData) DiffRef {
-	d := DiffRef{
-		Changed: map[string][]string{},
-	}
+	d := DiffRef{Changed: map[string][]string{}}
 	for k := range c.records {
 		if _, ok := other.records[k]; !ok {
 			d.RemovedRow = append(d.RemovedRow, k)
 		} else if changes := c.diffSingleRecord(k, other); len(changes) != 0 {
 			d.Changed[k] = changes
 		}
-		delete(other.records, k)
+		delete(other.records, k) // TODO(justiceo): this mutation is bad for the future, use set
 	}
 	for k := range other.records {
 		d.AddedRow = append(d.AddedRow, k)

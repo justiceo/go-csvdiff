@@ -130,7 +130,7 @@ func TestFromReader(t *testing.T) {
 			continue
 		}
 
-		if diff := cmp.Diff(v.want, got, cmpopts.IgnoreUnexported(csvData{}, change{})); diff != "" {
+		if diff := cmp.Diff(v.want, got, cmpopts.IgnoreUnexported(csvData{})); diff != "" {
 			t.Errorf("%s: got: %v, want: %v\n", v.name, got, v.want)
 		}
 	}
@@ -297,7 +297,7 @@ func TestCompare(t *testing.T) {
 			continue
 		}
 
-		if diff := cmp.Diff(v.want, got, cmpopts.IgnoreUnexported(csvData{}, change{})); diff != "" {
+		if diff := cmp.Diff(v.want, got, cmpopts.IgnoreUnexported(csvData{})); diff != "" {
 			t.Errorf("%s: got: %v, want: %v\n", v.name, got, v.want)
 		}
 	}
