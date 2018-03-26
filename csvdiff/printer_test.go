@@ -14,7 +14,7 @@ func TestAsSummary(t *testing.T) {
 		name     string
 		from, to io.Reader
 		opt      *Options
-		want     DiffRef
+		want     string
 		wantErr  bool
 	}{
 		{
@@ -22,12 +22,11 @@ func TestAsSummary(t *testing.T) {
 			from: strings.NewReader("a,b\n1,2\n3,4"),
 			to:   strings.NewReader("a,b\n1,7\n5,6"),
 			opt:  defaultOptions("a"),
-			want: DiffRef{
-				Changed: map[string][]string{},
-			},
+			want: "1 rows added.\n1 rows changed.\n1 rows removed.\n",
 		},
 	} {
-		got, err := AsJSON(v.from, v.to, v.opt)
+
+		got, err := AsSummary(v.from, v.to, v.opt)
 
 		if err != nil && !v.wantErr {
 			t.Errorf("%s: unexpected error: %v", v.name, err)
