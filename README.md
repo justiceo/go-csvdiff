@@ -23,3 +23,4 @@ go get -u github.com/justiceo/go-csvdiff/csvdiff
 MIT - See [LICENSE][license] file
 
 [license]: https://github.com/justiceo/csvdiff/LICENSE
+
