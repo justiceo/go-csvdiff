@@ -52,11 +52,11 @@ func diffToJSON(diff DiffRef, from, to csvData) (string, error) {
 			change["key"] = k
 			change["field"] = col
 			change["from"] = ""
-			if fi, ok := from.headerMap[k]; ok {
+			if fi, ok := from.headerMap[col]; ok {
 				change["from"] = from.records[k][fi]
 			}
 			change["to"] = ""
-			if ti, ok := to.headerMap[k]; ok {
+			if ti, ok := to.headerMap[col]; ok {
 				change["to"] = to.records[k][ti]
 			}
 			j["Changed"] = append(j["Changed"], change)

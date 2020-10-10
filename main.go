@@ -1,3 +1,4 @@
+// Command main provides a CLI for csvdiff
 package main
 
 import (
@@ -6,7 +7,7 @@ import (
 	"log"
 	"os"
 
-	csvdiff "./csvdiff"
+	csvdiff "github.com/justiceo/go-csvdiff/csvdiff"
 )
 
 type arrayFlags []string

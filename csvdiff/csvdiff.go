@@ -1,3 +1,4 @@
+// Package csvdiff implements a robust csv differ in go
 package csvdiff
 
 import (
@@ -147,9 +148,11 @@ func (c csvData) diffAllRecords(other csvData) DiffRef {
 		} else if changes := c.diffSingleRecord(k, other); len(changes) != 0 {
 			d.Changed[k] = changes
 		}
-		delete(other.records, k) // TODO(justiceo): this mutation is bad for the future, use set
 	}
 	for k := range other.records {
+		if _, ok := c.records[k]; ok {
+			continue
+		}
 		d.AddedRow = append(d.AddedRow, k)
 	}
 	return d
